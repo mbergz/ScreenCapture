@@ -44,15 +44,13 @@ public class FfmpegRecorder {
         inStream = p.getInputStream();
         outStream = p.getOutputStream();
         new Thread(() -> {
-            BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(errStream));
             try {
-                while (bufferedReader.readLine() != null);
+                while(errStream.read() != -1);
             } catch (IOException e){}
         }).start();
         new Thread(() -> {
-            BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inStream));
             try {
-                while (bufferedReader.readLine() != null);
+                while (inStream.read() != -1);
             } catch (IOException e){}
         }).start();
     }
