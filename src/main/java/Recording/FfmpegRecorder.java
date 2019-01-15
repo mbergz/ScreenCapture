@@ -23,7 +23,7 @@ public class FfmpegRecorder implements Recorder{
         setUpFfmpeg();
     }
 
-    private void setUpFfmpeg() {
+    private void shutDownIfActive() {
         if (pb != null) {
             if (isRecording){
                 try {
@@ -32,8 +32,14 @@ public class FfmpegRecorder implements Recorder{
                     e.printStackTrace();
                 }
             }
-            p.destroy();
+            if (p != null) {
+                p.destroy();
+            }
         }
+    }
+
+    private void setUpFfmpeg() {
+        shutDownIfActive();
         pb = new ProcessBuilder(ffmpegPath, "-f", "gdigrab", "-framerate", Integer.toString(framerate) , "-i", "desktop", "myTest123.mov");
     }
 
