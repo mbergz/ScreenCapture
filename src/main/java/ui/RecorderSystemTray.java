@@ -8,6 +8,9 @@ import java.util.List;
 
 import javax.swing.*;
 
+import Eventhandlers.Event;
+import Eventhandlers.EventHandler;
+import Eventhandlers.SubscribeEvent;
 import Recording.Recorder;
 
 public class RecorderSystemTray {
@@ -20,6 +23,7 @@ public class RecorderSystemTray {
             System.out.println("RecorderSystemTray is not supported");
             return;
         }
+        EventHandler.getInstance().addHandler(this);
         this.recorder = recorder;
         final PopupMenu popup = new PopupMenu();
         final TrayIcon trayIcon =
@@ -106,5 +110,10 @@ public class RecorderSystemTray {
         } else {
             return (new ImageIcon(imageURL, description)).getImage();
         }
+    }
+
+    @SubscribeEvent(event = Event.RECORDING)
+    public void onRecordingEvent(Object object) {
+        System.out.println("onRecordingEvent was called... object: " + object);
     }
 }

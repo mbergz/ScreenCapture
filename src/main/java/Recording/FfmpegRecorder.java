@@ -1,5 +1,8 @@
 package Recording;
 
+import Eventhandlers.Event;
+import Eventhandlers.EventHandler;
+
 import java.io.*;
 import java.util.concurrent.TimeUnit;
 
@@ -12,10 +15,12 @@ public class FfmpegRecorder implements Recorder{
     private InputStream errStream;
     private InputStream inStream;
     private OutputStream outStream;
+    private EventHandler eventHandler;
 
     private volatile boolean isRecording = false;
 
     public FfmpegRecorder() {
+        eventHandler = EventHandler.getInstance();
         setUpFfmpeg();
     }
 
@@ -60,6 +65,7 @@ public class FfmpegRecorder implements Recorder{
     }
 
     public void startRecording() throws IOException {
+        eventHandler.dispatchEvent(Event.RECORDING, "test1231313131");
         isRecording = true;
         p = pb.start();
         errStream = p.getErrorStream();
