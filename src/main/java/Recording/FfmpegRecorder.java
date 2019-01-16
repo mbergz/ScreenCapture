@@ -4,8 +4,9 @@ import java.io.*;
 import java.util.concurrent.TimeUnit;
 
 public class FfmpegRecorder implements Recorder{
-    final String ffmpegPath = "c:\\Users\\Martin\\Documents\\ffmpeg\\ffmpeg-20190112-1ea5529-win64-static\\bin\\ffmpeg.exe";
-    private int framerate = 10;
+    private static int DEFAULT_FRAMERATE = 30;
+    private final String ffmpegPath = "c:\\Users\\Martin\\Documents\\ffmpeg\\ffmpeg-20190112-1ea5529-win64-static\\bin\\ffmpeg.exe";
+    private int framerate = DEFAULT_FRAMERATE;
     private ProcessBuilder pb;
     private Process p;
     private InputStream errStream;

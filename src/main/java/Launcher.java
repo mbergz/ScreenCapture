@@ -1,11 +1,9 @@
+import java.io.IOException;
+
 import Recording.FfmpegRecorder;
 import ui.RecorderSystemTray;
 
-import java.io.*;
-import java.util.concurrent.TimeUnit;
-
 public class Launcher {
-    private static int DEFAULT_FRAMERATE = 30;
 
     public static void main(String[] args) throws IOException, InterruptedException {
         /*Runtime.getRuntime().addShutdownHook(new Thread(() -> {
@@ -16,7 +14,7 @@ public class Launcher {
             }
         }));
         */
-        FfmpegRecorder recorder = new FfmpegRecorder(DEFAULT_FRAMERATE);
+        FfmpegRecorder recorder = new FfmpegRecorder();
         new RecorderSystemTray(recorder);
     }
 }

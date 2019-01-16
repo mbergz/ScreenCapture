@@ -1,13 +1,14 @@
 package ui;
 
-import Recording.Recorder;
-
-import javax.swing.*;
 import java.awt.*;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
+
+import javax.swing.*;
+
+import Recording.Recorder;
 
 public class RecorderSystemTray {
     private static final String START_RECORD = "Start record";
@@ -30,6 +31,7 @@ public class RecorderSystemTray {
         Menu settingsMenu = new Menu("Settings");
         Menu framerateItem = createFramerateMenu();
         MenuItem dirSaveItem = new MenuItem("Directory to save file");
+        MenuItem resetSettingsMenuItem = new MenuItem("Reset to default settings");
         CheckboxMenuItem copyClipBoardItem = new CheckboxMenuItem("Copy to clipboard after recording");
         MenuItem shortCutItem = new MenuItem("Shortcuts...");
 
@@ -44,6 +46,7 @@ public class RecorderSystemTray {
         settingsMenu.add(dirSaveItem);
         settingsMenu.add(copyClipBoardItem);
         settingsMenu.add(shortCutItem);
+        settingsMenu.add(resetSettingsMenuItem);
         popup.addSeparator();
         popup.add(exitItem);
 
