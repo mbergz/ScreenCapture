@@ -11,6 +11,9 @@ import java.util.concurrent.TimeUnit;
 
 public class FfmpegRecorder implements Recorder{
     private static int DEFAULT_FRAMERATE = 30;
+    private static String RECORDING_STARTED = "Recording started";
+    private static String RECORDING_STOPPED = "Recording stopped";
+
     private String ffmpegPath = "c:\\Users\\Martin\\Documents\\ffmpeg\\ffmpeg-20190112-1ea5529-win64-static\\bin\\ffmpeg.exe";
     private int framerate = DEFAULT_FRAMERATE;
     private ProcessBuilder pb;
@@ -48,6 +51,16 @@ public class FfmpegRecorder implements Recorder{
         }
     }
 
+    @Override
+    public boolean setDirectoryToSaveRecordings(Path directoryPath) {
+        File dir = directoryPath.toFile();
+        if (dir.exists() && dir.isDirectory()) {
+            pb.directory(dir);
+            return true;
+        }
+        return false;
+    }
+
     public FfmpegRecorder(int framerate) {
         this.framerate = framerate;
         setUpFfmpeg();
@@ -73,15 +86,6 @@ public class FfmpegRecorder implements Recorder{
         pb = new ProcessBuilder(ffmpegPath, "-f", "gdigrab", "-framerate", Integer.toString(framerate) , "-i", "desktop", "myTest123.mov");
     }
 
-    /**
-     * Must be called before recording is started
-     *
-     * @param dir
-     */
-    public void setWorkingDirectory(String dir) {
-        pb.directory(new File("c:\\Users\\Martin\\Documents\\ffmpeg\\ffmpeg-20190112-1ea5529-win64-static\\bin"));
-    }
-
     public void recordForLimitedTime(int amount, TimeUnit unit) throws IOException, InterruptedException {
         startRecording();
         Thread.sleep(unit.toMillis(amount));
@@ -89,7 +93,7 @@ public class FfmpegRecorder implements Recorder{
     }
 
     public void startRecording() throws IOException {
-        eventHandler.dispatchEvent(Event.RECORDING, "test1231313131");
+        eventHandler.dispatchEvent(Event.RECORDING, RECORDING_STARTED);
         isRecording = true;
         p = pb.start();
         errStream = p.getErrorStream();
@@ -115,6 +119,8 @@ public class FfmpegRecorder implements Recorder{
         if (!p.waitFor(5, TimeUnit.SECONDS)){
             System.out.println("ffmpeg process did not exit properly after 5 seconds");
             p.destroy();
+        } else {
+            eventHandler.dispatchEvent(Event.RECORDING, RECORDING_STOPPED);
         }
         isRecording = false;
     }

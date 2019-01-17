@@ -22,7 +22,6 @@ public class SetFfmpegBinHelper
         fc.setDialogTitle("Select the path to ffmpeg.exe file...");
         int result = fc.showOpenDialog(null);
         if (result == JFileChooser.APPROVE_OPTION) {
-            // user selects a file
             File selectedFile = fc.getSelectedFile();
             // TODO write to config file
             return Optional.of(selectedFile.toPath());

@@ -17,6 +17,7 @@ public class RecorderSystemTray {
     private static final String START_RECORD = "Start record";
     private static final String STOP_RECORD = "Stop record";
     private Recorder recorder;
+    private final TrayIcon trayIcon = new TrayIcon(createImage("images/videocam-filled-tool.png", "tray icon"));
 
     public RecorderSystemTray(Recorder recorder){
         if (!SystemTray.isSupported()) {
@@ -26,18 +27,17 @@ public class RecorderSystemTray {
         EventHandler.getInstance().addHandler(this);
         this.recorder = recorder;
         final PopupMenu popup = new PopupMenu();
-        final TrayIcon trayIcon =
-                new TrayIcon(createImage("images/videocam-filled-tool.png", "tray icon"));
         final SystemTray tray = SystemTray.getSystemTray();
 
         // Create a pop-up menu components
         MenuItem recordItem = createToggleRecordingMenuItem();
+
         Menu settingsMenu = new Menu("Settings");
+        MenuItem dirSaveItem = createSaveDirMenuItem();
         Menu framerateItem = createFramerateMenu();
-        MenuItem dirSaveItem = new MenuItem("Directory to save file");
-        MenuItem resetSettingsMenuItem = new MenuItem("Reset to default settings");
         CheckboxMenuItem copyClipBoardItem = new CheckboxMenuItem("Copy to clipboard after recording");
         MenuItem shortCutItem = new MenuItem("Shortcuts...");
+        MenuItem resetSettingsMenuItem = new MenuItem("Reset to default settings");
 
         MenuItem exitItem = new MenuItem("Exit");
         exitItem.addActionListener(a -> System.exit(0));
@@ -55,7 +55,6 @@ public class RecorderSystemTray {
         popup.add(exitItem);
 
         trayIcon.setPopupMenu(popup);
-
         try {
             tray.add(trayIcon);
         } catch (AWTException e) {
@@ -81,6 +80,28 @@ public class RecorderSystemTray {
             framreateItem.add(item);
         });
         return framreateItem;
+    }
+
+    private MenuItem createSaveDirMenuItem() {
+        MenuItem item = new MenuItem("Directory to save file");
+        item.addActionListener(a -> {
+            JFileChooser chooser = new JFileChooser();
+            chooser.setCurrentDirectory(new java.io.File("."));
+            chooser.setDialogTitle("Choose directory to store recordings in");
+            chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+            chooser.setAcceptAllFileFilterUsed(false);
+            if (chooser.showOpenDialog(null) == JFileChooser.APPROVE_OPTION) {
+                System.out.println("getCurrentDirectory(): "
+                        +  chooser.getCurrentDirectory());
+                if (!recorder.setDirectoryToSaveRecordings(chooser.getCurrentDirectory().toPath())) {
+                    System.err.println("Could not set directory to save recordings in...");
+                }
+            }
+            else {
+                System.out.println("No Selection, keeping default directory");
+            }
+        });
+        return item;
     }
 
     private MenuItem createToggleRecordingMenuItem() {
@@ -114,6 +135,6 @@ public class RecorderSystemTray {
 
     @SubscribeEvent(event = Event.RECORDING)
     public void onRecordingEvent(Object object) {
-        System.out.println("onRecordingEvent was called... object: " + object);
+        trayIcon.displayMessage("ScreenCapture™", object.toString(), TrayIcon.MessageType.INFO);
     }
 }
