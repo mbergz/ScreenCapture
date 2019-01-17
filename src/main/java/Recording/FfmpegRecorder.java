@@ -1,14 +1,17 @@
 package Recording;
 
+import Config.ConfigurationHandler;
 import Eventhandlers.Event;
 import Eventhandlers.EventHandler;
 
 import java.io.*;
+import java.nio.file.Path;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 public class FfmpegRecorder implements Recorder{
     private static int DEFAULT_FRAMERATE = 30;
-    private final String ffmpegPath = "c:\\Users\\Martin\\Documents\\ffmpeg\\ffmpeg-20190112-1ea5529-win64-static\\bin\\ffmpeg.exe";
+    private String ffmpegPath = "c:\\Users\\Martin\\Documents\\ffmpeg\\ffmpeg-20190112-1ea5529-win64-static\\bin\\ffmpeg.exe";
     private int framerate = DEFAULT_FRAMERATE;
     private ProcessBuilder pb;
     private Process p;
@@ -19,9 +22,30 @@ public class FfmpegRecorder implements Recorder{
 
     private volatile boolean isRecording = false;
 
-    public FfmpegRecorder() {
+    public FfmpegRecorder() throws FileNotFoundException {
         eventHandler = EventHandler.getInstance();
+        setUpFfmpegPathBin();
         setUpFfmpeg();
+    }
+
+    private void setUpFfmpegPathBin() throws FileNotFoundException {
+        Optional<String> ffmpegConfigValue = ConfigurationHandler.getInstance()
+                .getProperty("ffmpegPathBin");
+        if (ffmpegConfigValue.isPresent()){
+            ffmpegPath = ffmpegConfigValue.get();
+            return;
+        }
+        final String OS = System.getProperty("os.name").toLowerCase();
+        if (OS.contains("nix") || OS.contains("nux") || OS.contains("aix")) {
+            ffmpegPath = "ffmpeg";
+        } else if (OS.contains("win")) {
+            Optional<Path> ffmpegPathOnWin = SetFfmpegBinHelper.setLocalFfmpegOnWindows();
+            if (ffmpegPathOnWin.isPresent()) {
+                ffmpegPath = ffmpegPathOnWin.get().toString();
+            } else {
+                throw new FileNotFoundException("Could not locate ffmpeg.exe on windows C:// drive");
+            }
+        }
     }
 
     public FfmpegRecorder(int framerate) {
