@@ -93,7 +93,7 @@ public class FfmpegRecorder implements Recorder{
     }
 
     public void startRecording() throws IOException {
-        eventHandler.dispatchEvent(Event.RECORDING, RECORDING_STARTED);
+        eventHandler.dispatchEvent(Event.RECORDING_STARTED, RECORDING_STARTED);
         isRecording = true;
         p = pb.start();
         errStream = p.getErrorStream();
@@ -120,7 +120,7 @@ public class FfmpegRecorder implements Recorder{
             System.out.println("ffmpeg process did not exit properly after 5 seconds");
             p.destroy();
         } else {
-            eventHandler.dispatchEvent(Event.RECORDING, RECORDING_STOPPED);
+            eventHandler.dispatchEvent(Event.RECORDING_STOPPED, RECORDING_STOPPED);
         }
         isRecording = false;
     }

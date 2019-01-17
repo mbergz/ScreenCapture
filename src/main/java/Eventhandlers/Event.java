@@ -1,5 +1,6 @@
 package Eventhandlers;
 
 public enum Event {
-    RECORDING
+    RECORDING_STARTED,
+    RECORDING_STOPPED
 }

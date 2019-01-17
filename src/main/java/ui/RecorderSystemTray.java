@@ -1,6 +1,8 @@
 package ui;
 
 import java.awt.*;
+import java.awt.datatransfer.Clipboard;
+import java.awt.datatransfer.StringSelection;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -133,8 +135,16 @@ public class RecorderSystemTray {
         }
     }
 
-    @SubscribeEvent(event = Event.RECORDING)
-    public void onRecordingEvent(Object object) {
+    @SubscribeEvent(event = {Event.RECORDING_STARTED, Event.RECORDING_STOPPED} )
+    public void onRecordingStartedEvent(Object object) {
         trayIcon.displayMessage("ScreenCapture™", object.toString(), TrayIcon.MessageType.INFO);
+    }
+
+    @SubscribeEvent(event = {Event.RECORDING_STOPPED} )
+    public void onRecordingStoppedEvent(Object object) {
+        String myString = "This text will be copied into clipboard!";
+        StringSelection stringSelection = new StringSelection(myString);
+        Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
+        clipboard.setContents(stringSelection, null);
     }
 }

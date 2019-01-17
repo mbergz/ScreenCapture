@@ -37,7 +37,7 @@ public class EventHandler {
             List<Method> methodsWithAnnotationMatchingEvent = Arrays.stream(methods)
                     .filter(method -> {
                         SubscribeEvent annotation = method.getAnnotation(SubscribeEvent.class);
-                        return annotation!= null && annotation.event().equals(eventType);
+                        return annotation!= null && Arrays.asList(annotation.event()).contains(eventType);
                     }).collect(Collectors.toList());
             methodsWithAnnotationMatchingEvent.forEach(method -> {
                 try {
