@@ -3,6 +3,7 @@ package Recording;
 import Config.ConfigurationHandler;
 import Eventhandlers.Event;
 import Eventhandlers.EventHandler;
+import Eventhandlers.Payload.RecordingStoppedEventPayload;
 
 import java.io.*;
 import java.nio.file.Path;
@@ -22,6 +23,7 @@ public class FfmpegRecorder implements Recorder{
     private InputStream inStream;
     private OutputStream outStream;
     private EventHandler eventHandler;
+    private String movieName = "myTest123.mov";
 
     private volatile boolean isRecording = false;
 
@@ -83,7 +85,8 @@ public class FfmpegRecorder implements Recorder{
 
     private void setUpFfmpeg() {
         shutDownIfActive();
-        pb = new ProcessBuilder(ffmpegPath, "-f", "gdigrab", "-framerate", Integer.toString(framerate) , "-i", "desktop", "myTest123.mov");
+        pb = new ProcessBuilder(ffmpegPath, "-f", "gdigrab", "-framerate", Integer.toString(framerate) , "-i", "desktop", movieName);
+        pb.directory(new File("."));
     }
 
     public void recordForLimitedTime(int amount, TimeUnit unit) throws IOException, InterruptedException {
@@ -93,7 +96,9 @@ public class FfmpegRecorder implements Recorder{
     }
 
     public void startRecording() throws IOException {
-        eventHandler.dispatchEvent(Event.RECORDING_STARTED, RECORDING_STARTED);
+        // TODO
+        // Set UUID on movie name, add option to autoremove
+        eventHandler.dispatchEvent(Event.RECORDING_STARTED, () -> RECORDING_STARTED);
         isRecording = true;
         p = pb.start();
         errStream = p.getErrorStream();
@@ -119,10 +124,22 @@ public class FfmpegRecorder implements Recorder{
         if (!p.waitFor(5, TimeUnit.SECONDS)){
             System.out.println("ffmpeg process did not exit properly after 5 seconds");
             p.destroy();
+            eventHandler.dispatchEvent(Event.RECORDING_STOPPED,
+                    () -> "Ffmpeg process aborted, could not finalize recording");
         } else {
-            eventHandler.dispatchEvent(Event.RECORDING_STOPPED, RECORDING_STOPPED);
+            eventHandler.dispatchEvent(Event.RECORDING_STOPPED, new RecordingStoppedEventPayload()
+                    .setMessage(RECORDING_STOPPED)
+                    .setPathToRecordedFile(getFfmpegCwdAsString()));
         }
         isRecording = false;
+    }
+
+    private String getFfmpegCwdAsString() {
+        String pbDir = pb.directory().getPath();
+        if (pbDir.equalsIgnoreCase(".")) {
+            return new File("").getAbsolutePath() + File.separator + movieName;
+        }
+        return pbDir + File.separator + movieName;
     }
 
     @Override
@@ -134,5 +151,10 @@ public class FfmpegRecorder implements Recorder{
     @Override
     public boolean isRecording() {
         return isRecording;
+    }
+
+    @Override
+    public void setAutoRemovalOfOldRecording(boolean shouldRemove) {
+        // TODO
     }
 }

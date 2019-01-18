@@ -1,6 +1,7 @@
 package Eventhandlers;
 
-import java.lang.annotation.Annotation;
+import Eventhandlers.Payload.Payload;
+
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -29,9 +30,14 @@ public class EventHandler {
         return handlers.remove(instance);
     }
 
-    public void dispatchEvent(Event eventType, Object payload) {
+    public void dispatchEvent(Event eventType) {
+        dispatchEvent(eventType, null);
+    }
+
+    public <T extends Payload> void  dispatchEvent(Event eventType, T payload) {
         // kolla vilka handlers som har metod med annotation + eventtype
         // spara en map på handlers som har viss typ av metod med eventtype för performance
+        // isf, kasta exception i addHandler om Handler klassen ej har annotationen
         handlers.forEach(handler -> {
             Method[] methods = handler.getClass().getMethods();
             List<Method> methodsWithAnnotationMatchingEvent = Arrays.stream(methods)

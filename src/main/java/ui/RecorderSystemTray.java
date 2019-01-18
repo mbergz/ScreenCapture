@@ -12,6 +12,8 @@ import javax.swing.*;
 
 import Eventhandlers.Event;
 import Eventhandlers.EventHandler;
+import Eventhandlers.Payload.Payload;
+import Eventhandlers.Payload.RecordingStoppedEventPayload;
 import Eventhandlers.SubscribeEvent;
 import Recording.Recorder;
 
@@ -136,15 +138,16 @@ public class RecorderSystemTray {
     }
 
     @SubscribeEvent(event = {Event.RECORDING_STARTED, Event.RECORDING_STOPPED} )
-    public void onRecordingStartedEvent(Object object) {
-        trayIcon.displayMessage("ScreenCapture™", object.toString(), TrayIcon.MessageType.INFO);
+    public void onRecordingEvent(Payload payload) {
+        trayIcon.displayMessage("ScreenCapture™", payload.getMessage(), TrayIcon.MessageType.INFO);
     }
 
     @SubscribeEvent(event = {Event.RECORDING_STOPPED} )
-    public void onRecordingStoppedEvent(Object object) {
-        String myString = "This text will be copied into clipboard!";
-        StringSelection stringSelection = new StringSelection(myString);
-        Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
-        clipboard.setContents(stringSelection, null);
+    public void onRecordingStoppedEvent(RecordingStoppedEventPayload payload) {
+        payload.getPathToRecordedFile().ifPresent(filePath -> {
+            StringSelection stringSelection = new StringSelection(filePath);
+            Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
+            clipboard.setContents(stringSelection, null);
+        });
     }
 }
