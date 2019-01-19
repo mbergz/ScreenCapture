@@ -1,72 +1,80 @@
 package Recording;
 
-import Config.ConfigurationHandler;
+import Config.ConfigurationFileReader;
 import Eventhandlers.Event;
 import Eventhandlers.EventHandler;
 import Eventhandlers.Payload.RecordingStoppedEventPayload;
+import Eventhandlers.SubscribeEvent;
+import Config.Recorder.Reader.RecorderConfigurationReader;
 
 import java.io.*;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 public class FfmpegRecorder implements Recorder{
-    private static int DEFAULT_FRAMERATE = 30;
-    private static String RECORDING_STARTED = "Recording started";
-    private static String RECORDING_STOPPED = "Recording stopped";
+    private static final  String RECORDING_STARTED = "Recording started";
+    private static final String RECORDING_STOPPED = "Recording stopped";
 
-    private String ffmpegPath = "c:\\Users\\Martin\\Documents\\ffmpeg\\ffmpeg-20190112-1ea5529-win64-static\\bin\\ffmpeg.exe";
-    private int framerate = DEFAULT_FRAMERATE;
+    // ------- Config variables -------
+    private RecorderConfigurationReader recorderConfiguration;
+    private int framerate;
+    private Path ffmpegPath;
+    private Path saveDirPath;
+    private String movieName;
+    // --------------------------------
+
+    private EventHandler eventHandler;
+
+    private volatile boolean isRecording = false;
+
+    // ------- Process stuff -------
     private ProcessBuilder pb;
     private Process p;
     private InputStream errStream;
     private InputStream inStream;
     private OutputStream outStream;
-    private EventHandler eventHandler;
-    private String movieName = "myTest123.mov";
+    // --------------------------------
 
-    private volatile boolean isRecording = false;
+    private static ConfigurationFileReader configHandler;
+    static  {
+        configHandler = ConfigurationFileReader.getInstance();
+    }
+    private Path lastRecordedMoviePath;
+    {
+        Optional<String> prop = configHandler.getProperty("lastRecordedPath");
+        prop.ifPresent(lastRecPath -> lastRecordedMoviePath = Paths.get(lastRecPath));
+    }
 
-    public FfmpegRecorder() throws FileNotFoundException {
+    public FfmpegRecorder(RecorderConfigurationReader configuration) throws FileNotFoundException {
+        this.recorderConfiguration = configuration;
+        setUpDefaultConfiguration();
         eventHandler = EventHandler.getInstance();
-        setUpFfmpegPathBin();
         setUpFfmpeg();
     }
 
-    private void setUpFfmpegPathBin() throws FileNotFoundException {
-        Optional<String> ffmpegConfigValue = ConfigurationHandler.getInstance()
-                .getProperty("ffmpegPathBin");
-        if (ffmpegConfigValue.isPresent()){
-            ffmpegPath = ffmpegConfigValue.get();
-            return;
-        }
-        final String OS = System.getProperty("os.name").toLowerCase();
-        if (OS.contains("nix") || OS.contains("nux") || OS.contains("aix")) {
-            ffmpegPath = "ffmpeg";
-        } else if (OS.contains("win")) {
-            Optional<Path> ffmpegPathOnWin = SetFfmpegBinHelper.setLocalFfmpegOnWindows();
-            if (ffmpegPathOnWin.isPresent()) {
-                ffmpegPath = ffmpegPathOnWin.get().toString();
-            } else {
-                throw new FileNotFoundException("Could not locate ffmpeg.exe on windows C:// drive");
-            }
-        }
+    private void setUpDefaultConfiguration() {
+        ffmpegPath = recorderConfiguration.getFfmpegBinPath();
+        framerate = recorderConfiguration.getFps();
+        saveDirPath = recorderConfiguration.getDirPathToSavedRecordings();
+        movieName = recorderConfiguration.getMovieName();
     }
 
-    @Override
-    public boolean setDirectoryToSaveRecordings(Path directoryPath) {
-        File dir = directoryPath.toFile();
+    // TODO
+    @SubscribeEvent(event = {Event.RECORDING_NEW_CONFIGURATION_SAVE_DIR_CHANGED})
+    public void dirToSaveRecordingsChanged() {
+        System.out.println("received a setDirToSaveRecofgin event");
+        Path path = recorderConfiguration.getDirPathToSavedRecordings();
+        File dir = path.toFile();
         if (dir.exists() && dir.isDirectory()) {
             pb.directory(dir);
-            return true;
+            //return true;
         }
-        return false;
+        //return false;
     }
 
-    public FfmpegRecorder(int framerate) {
-        this.framerate = framerate;
-        setUpFfmpeg();
-    }
+    // TODO more configurationEvents
 
     private void shutDownIfActive() {
         if (pb != null) {
@@ -85,7 +93,7 @@ public class FfmpegRecorder implements Recorder{
 
     private void setUpFfmpeg() {
         shutDownIfActive();
-        pb = new ProcessBuilder(ffmpegPath, "-f", "gdigrab", "-framerate", Integer.toString(framerate) , "-i", "desktop", movieName);
+        pb = new ProcessBuilder(ffmpegPath.toString(), "-f", "gdigrab", "-framerate", Integer.toString(framerate) , "-i", "desktop", movieName);
         pb.directory(new File("."));
     }
 
@@ -143,18 +151,7 @@ public class FfmpegRecorder implements Recorder{
     }
 
     @Override
-    public void setFps(int fps) {
-        this.framerate = fps;
-        setUpFfmpeg();
-    }
-
-    @Override
     public boolean isRecording() {
         return isRecording;
-    }
-
-    @Override
-    public void setAutoRemovalOfOldRecording(boolean shouldRemove) {
-        // TODO
     }
 }

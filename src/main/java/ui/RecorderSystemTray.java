@@ -1,5 +1,14 @@
 package ui;
 
+import Eventhandlers.Event;
+import Eventhandlers.EventHandler;
+import Eventhandlers.Payload.Payload;
+import Eventhandlers.Payload.RecordingStoppedEventPayload;
+import Eventhandlers.SubscribeEvent;
+import Config.Recorder.Writer.RecorderConfigurationWriterImpl;
+import Recording.Recorder;
+
+import javax.swing.*;
 import java.awt.*;
 import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.StringSelection;
@@ -8,19 +17,11 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.swing.*;
-
-import Eventhandlers.Event;
-import Eventhandlers.EventHandler;
-import Eventhandlers.Payload.Payload;
-import Eventhandlers.Payload.RecordingStoppedEventPayload;
-import Eventhandlers.SubscribeEvent;
-import Recording.Recorder;
-
 public class RecorderSystemTray {
     private static final String START_RECORD = "Start record";
     private static final String STOP_RECORD = "Stop record";
     private Recorder recorder;
+    private RecorderConfigurationWriterImpl recorderConfig = new RecorderConfigurationWriterImpl();
     private final TrayIcon trayIcon = new TrayIcon(createImage("images/videocam-filled-tool.png", "tray icon"));
 
     public RecorderSystemTray(Recorder recorder){
@@ -79,7 +80,7 @@ public class RecorderSystemTray {
         items.forEach(item -> {
             item.addActionListener(a -> {
                 int fpsLabel = Integer.parseInt(((MenuItem)a.getSource()).getLabel());
-                recorder.setFps(fpsLabel);
+                recorderConfig.setFps(fpsLabel);
             });
             framreateItem.add(item);
         });
@@ -97,9 +98,8 @@ public class RecorderSystemTray {
             if (chooser.showOpenDialog(null) == JFileChooser.APPROVE_OPTION) {
                 System.out.println("getCurrentDirectory(): "
                         +  chooser.getCurrentDirectory());
-                if (!recorder.setDirectoryToSaveRecordings(chooser.getCurrentDirectory().toPath())) {
-                    System.err.println("Could not set directory to save recordings in...");
-                }
+                // Use configuration class here instead
+                recorderConfig.setDirectoryToSaveRecordings(chooser.getCurrentDirectory().toPath());
             }
             else {
                 System.out.println("No Selection, keeping default directory");

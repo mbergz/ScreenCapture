@@ -9,34 +9,37 @@ import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Optional;
 
-public class ConfigurationHandler {
-    private static ConfigurationHandler instance;
+public class ConfigurationFileWriter {
+    private static ConfigurationFileWriter instance;
 
-    public static ConfigurationHandler getInstance(){
+    public static ConfigurationFileWriter getInstance(){
         if(instance == null){
-            instance = new ConfigurationHandler();
+            instance = new ConfigurationFileWriter();
             return instance;
         }
         return instance;
     }
 
-    private ConfigurationHandler(){}
+    private ConfigurationFileWriter(){}
 
-    public Optional<String> getProperty(String key) {
+    public void writeNewConfigurationItem(String key, String value) {
         Path path = Paths.get("config.json");
         try {
             String jsonString = FileUtils.readFileToString(path.toFile(), Charset.defaultCharset());
             JsonParser parser = new JsonParser();
             JsonObject object = parser.parse(jsonString).getAsJsonObject();
             JsonElement element = object.get(key);
-            if (!element.isJsonNull() && element.getAsString().length() >0) {
-                return Optional.of(element.getAsString());
+            if (element == null) {
+                object.add(key, parser.parse(value));
+            } else {
+                // exists already
+                object.remove(key);
+                object.add(key, parser.parse(value));
             }
+            FileUtils.writeStringToFile(path.toFile(), object.getAsString(), Charset.defaultCharset());
         } catch (IOException e) {
             e.printStackTrace();
         }
-        return Optional.empty();
     }
 }

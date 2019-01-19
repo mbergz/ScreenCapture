@@ -2,6 +2,8 @@ package Eventhandlers.Payload;
 
 import java.util.Optional;
 
+// TODO
+// scrap this shit
 public class RecordingStoppedEventPayload implements Payload {
     private String message;
     private String pathToRecordedFile;
