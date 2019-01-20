@@ -1,4 +1,4 @@
-package Config.Recorder.Writer;
+package Config.RecorderSpecific.Writer;
 
 import java.nio.file.Path;
 

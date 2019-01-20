@@ -1,11 +1,12 @@
 package ui;
 
+import Config.RecorderSpecific.Writer.RecorderConfigurationWriter;
 import Eventhandlers.Event;
 import Eventhandlers.EventHandler;
 import Eventhandlers.Payload.Payload;
 import Eventhandlers.Payload.RecordingStoppedEventPayload;
 import Eventhandlers.SubscribeEvent;
-import Config.Recorder.Writer.RecorderConfigurationWriterImpl;
+import Config.RecorderSpecific.Writer.RecorderConfigurationFromFileWriterImpl;
 import Recording.Recorder;
 
 import javax.swing.*;
@@ -15,13 +16,12 @@ import java.awt.datatransfer.StringSelection;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.List;
 
 public class RecorderSystemTray {
     private static final String START_RECORD = "Start record";
     private static final String STOP_RECORD = "Stop record";
     private Recorder recorder;
-    private RecorderConfigurationWriterImpl recorderConfig = new RecorderConfigurationWriterImpl();
+    private RecorderConfigurationWriter recorderConfigWriter = new RecorderConfigurationFromFileWriterImpl();
     private final TrayIcon trayIcon = new TrayIcon(createImage("images/videocam-filled-tool.png", "tray icon"));
 
     public RecorderSystemTray(Recorder recorder){
@@ -69,7 +69,7 @@ public class RecorderSystemTray {
 
     private Menu createFramerateMenu() {
         Menu framreateItem = new Menu("Framerate...");
-        List<MenuItem> items = new ArrayList<>();
+        var items = new ArrayList<MenuItem>();
         items.add(new MenuItem("60"));
         items.add(new MenuItem("45"));
         items.add(new MenuItem("30"));
@@ -80,7 +80,7 @@ public class RecorderSystemTray {
         items.forEach(item -> {
             item.addActionListener(a -> {
                 int fpsLabel = Integer.parseInt(((MenuItem)a.getSource()).getLabel());
-                recorderConfig.setFps(fpsLabel);
+                recorderConfigWriter.setFps(fpsLabel);
             });
             framreateItem.add(item);
         });
@@ -98,8 +98,7 @@ public class RecorderSystemTray {
             if (chooser.showOpenDialog(null) == JFileChooser.APPROVE_OPTION) {
                 System.out.println("getCurrentDirectory(): "
                         +  chooser.getCurrentDirectory());
-                // Use configuration class here instead
-                recorderConfig.setDirectoryToSaveRecordings(chooser.getCurrentDirectory().toPath());
+                recorderConfigWriter.setDirectoryToSaveRecordings(chooser.getCurrentDirectory().toPath());
             }
             else {
                 System.out.println("No Selection, keeping default directory");
@@ -142,6 +141,7 @@ public class RecorderSystemTray {
         trayIcon.displayMessage("ScreenCapture™", payload.getMessage(), TrayIcon.MessageType.INFO);
     }
 
+    // Skip Payload because we needs to read config either way..., show it in settings
     @SubscribeEvent(event = {Event.RECORDING_STOPPED} )
     public void onRecordingStoppedEvent(RecordingStoppedEventPayload payload) {
         payload.getPathToRecordedFile().ifPresent(filePath -> {

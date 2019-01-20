@@ -1,16 +1,13 @@
 package Recording;
 
-import Config.ConfigurationFileReader;
+import Config.RecorderSpecific.Reader.RecorderConfigurationReader;
 import Eventhandlers.Event;
 import Eventhandlers.EventHandler;
 import Eventhandlers.Payload.RecordingStoppedEventPayload;
 import Eventhandlers.SubscribeEvent;
-import Config.Recorder.Reader.RecorderConfigurationReader;
 
 import java.io.*;
 import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 public class FfmpegRecorder implements Recorder{
@@ -37,17 +34,7 @@ public class FfmpegRecorder implements Recorder{
     private OutputStream outStream;
     // --------------------------------
 
-    private static ConfigurationFileReader configHandler;
-    static  {
-        configHandler = ConfigurationFileReader.getInstance();
-    }
-    private Path lastRecordedMoviePath;
-    {
-        Optional<String> prop = configHandler.getProperty("lastRecordedPath");
-        prop.ifPresent(lastRecPath -> lastRecordedMoviePath = Paths.get(lastRecPath));
-    }
-
-    public FfmpegRecorder(RecorderConfigurationReader configuration) throws FileNotFoundException {
+    public FfmpegRecorder(RecorderConfigurationReader configuration) {
         this.recorderConfiguration = configuration;
         setUpDefaultConfiguration();
         eventHandler = EventHandler.getInstance();

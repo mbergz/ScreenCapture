@@ -1,4 +1,4 @@
-package Config.Recorder.Writer;
+package Config.RecorderSpecific.Writer;
 
 import Config.ConfigurationFileWriter;
 import Eventhandlers.EventHandler;
@@ -7,7 +7,7 @@ import java.nio.file.Path;
 
 import static Eventhandlers.Event.*;
 
-public class RecorderConfigurationWriterImpl implements RecorderConfigurationWriter {
+public class RecorderConfigurationFromFileWriterImpl implements RecorderConfigurationWriter {
     private static ConfigurationFileWriter configurationFileWriter = ConfigurationFileWriter.getInstance();
     private static EventHandler eventHandler = EventHandler.getInstance();
 
