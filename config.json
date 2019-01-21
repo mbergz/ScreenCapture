@@ -1,3 +1,6 @@
 {
-  "ffmpegPathBin" : "c:\\Users\\Martin\\Documents\\ffmpeg\\ffmpeg-20190112-1ea5529-win64-static\\bin\\ffmpeg.exe"
+  "ffmpegPathBin" : "c:\\Users\\Martin\\Documents\\ffmpeg\\ffmpeg-20190112-1ea5529-win64-static\\bin\\ffmpeg.exe",
+  "autoRemoveOldRecording" : "false",
+  "pathToSaved" : ".",
+  "fps" : "15"
 }

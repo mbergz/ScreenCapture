@@ -24,6 +24,14 @@ public class ConfigurationFileReader {
 
     private ConfigurationFileReader(){}
 
+    public Optional<Integer> getPropertyAsInteger(String key) {
+        JsonElement element = getElementFromFile(key);
+        if (element != null && !element.isJsonNull() && element.getAsString().length() >0) {
+            return Optional.of(element.getAsInt());
+        }
+        return Optional.empty();
+    }
+
     public Optional<Path> getPropertyAsPath(String key) {
         JsonElement element = getElementFromFile(key);
         if (element != null && !element.isJsonNull() && element.getAsString().length() >0) {

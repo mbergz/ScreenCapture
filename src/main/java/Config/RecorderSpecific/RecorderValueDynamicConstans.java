@@ -1,4 +1,4 @@
-package Config.RecorderSpecific.Reader;
+package Config.RecorderSpecific;
 
 import Recording.SetFfmpegBinHelper;
 
@@ -7,13 +7,14 @@ import java.nio.file.Paths;
 import java.util.Optional;
 import java.util.UUID;
 
-class RecorderDefaultValueConstans {
-    static final boolean SHOULD_AUTOREMOVE = false;
-    static final int FRAMERATE = 15;
-    static final Path DIR_TO_SAVED_RECORDING = Paths.get(".");
-    static final String MOVIE_NAMME = "screen_capture" + UUID.randomUUID() + ".mov";
+public class RecorderValueDynamicConstans {
+    public static String MOVIE_NAME = "screen_capture" + UUID.randomUUID() + ".mov";
 
-    static Path getFfmpegBinPath() {
+    public static void changeMovieName(String newName) {
+        MOVIE_NAME = newName;
+    }
+
+    public static Path getFfmpegBinPath() {
         return setUpFfmpegPathBin();
     }
 

@@ -23,7 +23,14 @@ public class ConfigurationFileWriter {
 
     private ConfigurationFileWriter(){}
 
-    public void writeNewConfigurationItem(String key, String value) {
+    /**
+     * Writes new value to existing key, or creates a new if none exists
+     *
+     * @param key - json key
+     * @param value - value to write
+     * @param <T> - type of value that will be written with toString()
+     */
+    public <T> void writeNewConfigurationItem(String key, T value) {
         Path path = Paths.get("config.json");
         try {
             String jsonString = FileUtils.readFileToString(path.toFile(), Charset.defaultCharset());
@@ -31,11 +38,11 @@ public class ConfigurationFileWriter {
             JsonObject object = parser.parse(jsonString).getAsJsonObject();
             JsonElement element = object.get(key);
             if (element == null) {
-                object.add(key, parser.parse(value));
+                object.add(key, parser.parse(value.toString()));
             } else {
                 // exists already
                 object.remove(key);
-                object.add(key, parser.parse(value));
+                object.add(key, parser.parse(value.toString()));
             }
             FileUtils.writeStringToFile(path.toFile(), object.getAsString(), Charset.defaultCharset());
         } catch (IOException e) {
