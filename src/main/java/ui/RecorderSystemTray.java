@@ -141,13 +141,18 @@ public class RecorderSystemTray {
         trayIcon.displayMessage("ScreenCapture™", payload.getMessage(), TrayIcon.MessageType.INFO);
     }
 
-    // Skip Payload because we needs to read config either way..., show it in settings
     @SubscribeEvent(event = {Event.RECORDING_STOPPED} )
     public void onRecordingStoppedEvent(RecordingStoppedEventPayload payload) {
         payload.getPathToRecordedFile().ifPresent(filePath -> {
             StringSelection stringSelection = new StringSelection(filePath);
             Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
             clipboard.setContents(stringSelection, null);
+
+            try {
+                Runtime.getRuntime().exec("explorer.exe /select," + filePath);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         });
     }
 }

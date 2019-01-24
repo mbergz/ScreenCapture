@@ -14,6 +14,10 @@ public class RecorderValueDynamicConstans {
         MOVIE_NAME = newName;
     }
 
+    public static void generateNewUuidMovieName(String prefix) {
+        MOVIE_NAME = prefix + UUID.randomUUID() + ".mov";
+    }
+
     public static Path getFfmpegBinPath() {
         return setUpFfmpegPathBin();
     }
