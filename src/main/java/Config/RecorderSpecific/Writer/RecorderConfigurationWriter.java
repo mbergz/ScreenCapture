@@ -12,6 +12,4 @@ public interface RecorderConfigurationWriter {
 
     public void setFps(int fps);
 
-    public void setMovieName(String newName);
-
 }

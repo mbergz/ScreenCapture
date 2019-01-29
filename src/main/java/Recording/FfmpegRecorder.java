@@ -60,7 +60,7 @@ public class FfmpegRecorder implements Recorder{
 
     // ------- CONFIG STUFF -------
     @SubscribeEvent(event = {Event.RECORDING_NEW_CONFIGURATION_SAVE_DIR_CHANGED})
-    public void dirToSaveRecordingsChanged() {
+        public void dirToSaveRecordingsChanged() {
         System.out.println("received a setDirToSaveRecording event");
         Path path = recorderConfiguration.getDirPathToSavedRecordings();
         File dir = path.toFile();

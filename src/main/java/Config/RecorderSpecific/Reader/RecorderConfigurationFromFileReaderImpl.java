@@ -33,11 +33,6 @@ public class RecorderConfigurationFromFileReaderImpl implements RecorderConfigur
         return fpsConfigValue.orElseThrow(() -> new ConfigValueCouldNotBeFoundException(RecorderJsonKeyConstants.FPS.getJsonKey()));
     }
 
-    @Override
-    public String getMovieName() {
-        return RecorderValueDynamicConstans.MOVIE_NAME;
-    }
-
     private static class ConfigValueCouldNotBeFoundException extends RuntimeException {
 
         ConfigValueCouldNotBeFoundException(String message) {

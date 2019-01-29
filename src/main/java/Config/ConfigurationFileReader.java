@@ -1,9 +1,9 @@
 package Config;
 
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
 import org.apache.commons.io.FileUtils;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
@@ -25,45 +25,45 @@ public class ConfigurationFileReader {
     private ConfigurationFileReader(){}
 
     public Optional<Integer> getPropertyAsInteger(String key) {
-        JsonElement element = getElementFromFile(key);
-        if (element != null && !element.isJsonNull() && element.getAsString().length() >0) {
-            return Optional.of(element.getAsInt());
+        String element = getElementFromFile(key);
+        if (element != null) {
+            return Optional.of(Integer.parseInt(element));
         }
         return Optional.empty();
     }
 
     public Optional<Path> getPropertyAsPath(String key) {
-        JsonElement element = getElementFromFile(key);
-        if (element != null && !element.isJsonNull() && element.getAsString().length() >0) {
-            return Optional.of(Paths.get(element.getAsString()));
+        String element = getElementFromFile(key);
+        if (element != null) {
+            return Optional.of(Paths.get(element));
         }
         return Optional.empty();
     }
 
     public Optional<Boolean> getPropertyAsBoolean(String key) {
-        JsonElement element = getElementFromFile(key);
-        if (element != null && !element.isJsonNull() && element.getAsString().length() >0) {
-            return Optional.of(element.getAsBoolean());
+        String element = getElementFromFile(key);
+        if (element != null) {
+            return Optional.of(Boolean.valueOf(element));
         }
         return Optional.empty();
     }
 
     public Optional<String> getPropertyAsString(String key) {
-        JsonElement element = getElementFromFile(key);
-        if (element != null && !element.isJsonNull() && element.getAsString().length() >0) {
-            return Optional.of(element.getAsString());
+        String element = getElementFromFile(key);
+        if (element != null && element.length() > 0) {
+            return Optional.of(element);
         }
         return Optional.empty();
     }
 
-    private JsonElement getElementFromFile(String key) {
+    private String getElementFromFile(String key) {
         Path path = Paths.get("config.json");
         try {
             String jsonString = FileUtils.readFileToString(path.toFile(), Charset.defaultCharset());
-            JsonParser parser = new JsonParser();
-            JsonObject object = parser.parse(jsonString).getAsJsonObject();
-            return object.get(key);
-        } catch (IOException e) {
+            JSONParser parser = new JSONParser();
+            JSONObject json = (JSONObject) parser.parse(jsonString);
+            return (String) json.get(key);
+        } catch (IOException | ParseException e) {
             e.printStackTrace();
         }
         return null;

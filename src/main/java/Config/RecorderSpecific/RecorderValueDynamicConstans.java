@@ -10,14 +10,6 @@ import java.util.UUID;
 public class RecorderValueDynamicConstans {
     public static String MOVIE_NAME = "screen_capture" + UUID.randomUUID() + ".mov";
 
-    public static void changeMovieName(String newName) {
-        MOVIE_NAME = newName;
-    }
-
-    public static void generateNewUuidMovieName(String prefix) {
-        MOVIE_NAME = prefix + UUID.randomUUID() + ".mov";
-    }
-
     public static Path getFfmpegBinPath() {
         return setUpFfmpegPathBin();
     }

@@ -12,6 +12,4 @@ public interface RecorderConfigurationReader {
 
     public int getFps();
 
-    public String getMovieName();
-
 }

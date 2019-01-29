@@ -29,13 +29,7 @@ public class RecorderConfigurationFromFileWriterImpl implements RecorderConfigur
     }
 
     public void setFps(int fps) {
-        configurationFileWriter.writeNewConfigurationItem(RecorderJsonKeyConstants.FPS.getJsonKey(), fps);
+        configurationFileWriter.writeNewConfigurationItem(RecorderJsonKeyConstants.FPS.getJsonKey(), String.valueOf(fps));
         eventHandler.dispatchEvent(RECORDING_NEW_CONFIGURATION_FPS_CHANGED);
     }
-
-    public void setMovieName(String newName) {
-        RecorderValueDynamicConstans.changeMovieName(newName);
-        eventHandler.dispatchEvent(RECORDING_NEW_CONFIGURATION_MOVIE_NAME_CHANGED);
-    }
-
 }

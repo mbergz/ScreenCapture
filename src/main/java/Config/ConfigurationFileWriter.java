@@ -1,9 +1,9 @@
 package Config;
 
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
 import org.apache.commons.io.FileUtils;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
@@ -30,22 +30,16 @@ public class ConfigurationFileWriter {
      * @param value - value to write
      * @param <T> - type of value that will be written with toString()
      */
+    @SuppressWarnings("unchecked")
     public <T> void writeNewConfigurationItem(String key, T value) {
         Path path = Paths.get("config.json");
         try {
             String jsonString = FileUtils.readFileToString(path.toFile(), Charset.defaultCharset());
-            JsonParser parser = new JsonParser();
-            JsonObject object = parser.parse(jsonString).getAsJsonObject();
-            JsonElement element = object.get(key);
-            if (element == null) {
-                object.add(key, parser.parse(value.toString()));
-            } else {
-                // exists already
-                object.remove(key);
-                object.add(key, parser.parse(value.toString()));
-            }
-            FileUtils.writeStringToFile(path.toFile(), object.getAsString(), Charset.defaultCharset());
-        } catch (IOException e) {
+            JSONParser parser = new JSONParser();
+            JSONObject json = (JSONObject) parser.parse(jsonString);
+            json.put(key, value.toString());
+            FileUtils.writeStringToFile(path.toFile(), json.toJSONString(), Charset.defaultCharset());
+        } catch (IOException | ParseException e) {
             e.printStackTrace();
         }
     }

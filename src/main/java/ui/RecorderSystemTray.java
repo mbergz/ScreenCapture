@@ -13,6 +13,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.StringSelection;
+import java.awt.event.ItemEvent;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -39,9 +40,8 @@ public class RecorderSystemTray {
 
         Menu settingsMenu = new Menu("Settings");
         MenuItem dirSaveItem = createSaveDirMenuItem();
+        CheckboxMenuItem autoRemoveOld = createAutoRemoveOldRecordinsMenuItem();
         Menu framerateItem = createFramerateMenu();
-        CheckboxMenuItem copyClipBoardItem = new CheckboxMenuItem("Copy to clipboard after recording");
-        MenuItem shortCutItem = new MenuItem("Shortcuts...");
         MenuItem resetSettingsMenuItem = new MenuItem("Reset to default settings");
 
         MenuItem exitItem = new MenuItem("Exit");
@@ -53,8 +53,7 @@ public class RecorderSystemTray {
         popup.add(settingsMenu);
         settingsMenu.add(framerateItem);
         settingsMenu.add(dirSaveItem);
-        settingsMenu.add(copyClipBoardItem);
-        settingsMenu.add(shortCutItem);
+        settingsMenu.add(autoRemoveOld);
         settingsMenu.add(resetSettingsMenuItem);
         popup.addSeparator();
         popup.add(exitItem);
@@ -85,6 +84,19 @@ public class RecorderSystemTray {
             framreateItem.add(item);
         });
         return framreateItem;
+    }
+
+    private CheckboxMenuItem createAutoRemoveOldRecordinsMenuItem(){
+        CheckboxMenuItem item = new CheckboxMenuItem("Autoremove recordings");
+        item.addItemListener(itemEvent -> {
+            int itemState = itemEvent.getStateChange();
+            if (itemState == ItemEvent.SELECTED){
+                recorderConfigWriter.setAutoRemovalOfOldRecording(true);
+            } else {
+                recorderConfigWriter.setAutoRemovalOfOldRecording(false);
+            }
+        });
+        return item;
     }
 
     private MenuItem createSaveDirMenuItem() {
