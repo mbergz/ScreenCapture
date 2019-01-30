@@ -156,6 +156,7 @@ public class RecorderSystemTray {
     @SubscribeEvent(event = {Event.RECORDING_STOPPED} )
     public void onRecordingStoppedEvent(RecordingStoppedEventPayload payload) {
         payload.getPathToRecordedFile().ifPresent(filePath -> {
+            System.out.println(filePath);
             StringSelection stringSelection = new StringSelection(filePath);
             Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
             clipboard.setContents(stringSelection, null);

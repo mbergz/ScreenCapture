@@ -132,7 +132,9 @@ public class FfmpegRecorder implements Recorder{
         if (previousRecordingPath == null || previousRecordingPath.toFile().isDirectory()) {
             return;
         }
-        FileUtils.deleteQuietly(previousRecordingPath.toFile());
+        if (shouldAutoRemoveOld) {
+            FileUtils.deleteQuietly(previousRecordingPath.toFile());
+        }
     }
 
     public void startRecording() throws IOException {
@@ -170,10 +172,10 @@ public class FfmpegRecorder implements Recorder{
                     () -> "Ffmpeg process aborted, could not finalize recording");
             removePreviousRecordingIfExist();
         } else {
-            generateNewUuidMovieName();
             eventHandler.dispatchEvent(Event.RECORDING_STOPPED, new RecordingStoppedEventPayload()
                     .setMessage(RECORDING_STOPPED)
                     .setPathToRecordedFile(getPathToRecording()));
+            generateNewUuidMovieName();
         }
         isRecording = false;
     }
