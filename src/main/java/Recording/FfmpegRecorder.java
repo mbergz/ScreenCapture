@@ -135,6 +135,7 @@ public class FfmpegRecorder implements Recorder{
         if (shouldAutoRemoveOld) {
             FileUtils.deleteQuietly(previousRecordingPath.toFile());
         }
+        setUpFfmpeg();
     }
 
     public void startRecording() throws IOException {
