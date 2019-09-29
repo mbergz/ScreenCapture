@@ -3,8 +3,6 @@ package Recording;
 import Config.RecorderSpecific.Reader.RecorderConfigurationReader;
 import Config.RecorderSpecific.RecorderJsonKeyConstants;
 import Config.RecorderSpecific.Writer.RecorderConfigurationWriter;
-import Eventhandlers.Event;
-import Eventhandlers.SubscribeEvent;
 import org.apache.commons.io.FileUtils;
 
 import java.io.*;
