@@ -1,13 +1,9 @@
 package ui;
 
-import Config.RecorderSpecific.Writer.RecorderConfigurationWriter;
-import Eventhandlers.Event;
-import Eventhandlers.EventHandler;
-import Eventhandlers.Payload.Payload;
-import Eventhandlers.Payload.RecordingStoppedEventPayload;
-import Eventhandlers.SubscribeEvent;
-import Config.RecorderSpecific.Writer.RecorderConfigurationFromFileWriterImpl;
+import Config.RecorderSpecific.RecorderJsonKeyConstants;
 import Recording.Recorder;
+import Recording.RecorderEventListener;
+import Recording.RecorderEventMessage;
 
 import javax.swing.*;
 import java.awt.*;
@@ -18,11 +14,13 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 
-public class RecorderSystemTray {
+public class RecorderSystemTray implements RecorderEventListener {
+    private static final String RECORDING_STARTED = "Recording started";
+    private static final String RECORDING_STOPPED = "Recording stopped";
+
     private static final String START_RECORD = "Start record";
     private static final String STOP_RECORD = "Stop record";
     private Recorder recorder;
-    private RecorderConfigurationWriter recorderConfigWriter = new RecorderConfigurationFromFileWriterImpl();
     private final TrayIcon trayIcon = new TrayIcon(createImage("images/videocam-filled-tool.png", "tray icon"));
 
     public RecorderSystemTray(Recorder recorder){
@@ -30,8 +28,8 @@ public class RecorderSystemTray {
             System.out.println("RecorderSystemTray is not supported");
             return;
         }
-        EventHandler.getInstance().addHandler(this);
         this.recorder = recorder;
+        this.recorder.addRecorderEventListner(this);
         final PopupMenu popup = new PopupMenu();
         final SystemTray tray = SystemTray.getSystemTray();
 
@@ -79,7 +77,7 @@ public class RecorderSystemTray {
         items.forEach(item -> {
             item.addActionListener(a -> {
                 int fpsLabel = Integer.parseInt(((MenuItem)a.getSource()).getLabel());
-                recorderConfigWriter.setFps(fpsLabel);
+                recorder.setConfigurationValue(RecorderJsonKeyConstants.FPS, Integer.toString(fpsLabel));
             });
             framreateItem.add(item);
         });
@@ -91,9 +89,9 @@ public class RecorderSystemTray {
         item.addItemListener(itemEvent -> {
             int itemState = itemEvent.getStateChange();
             if (itemState == ItemEvent.SELECTED){
-                recorderConfigWriter.setAutoRemovalOfOldRecording(true);
+                recorder.setConfigurationValue(RecorderJsonKeyConstants.AUTO_REMOVE_OLD_RECORDING, Boolean.TRUE.toString());
             } else {
-                recorderConfigWriter.setAutoRemovalOfOldRecording(false);
+                recorder.setConfigurationValue(RecorderJsonKeyConstants.AUTO_REMOVE_OLD_RECORDING, Boolean.FALSE.toString());
             }
         });
         return item;
@@ -110,7 +108,7 @@ public class RecorderSystemTray {
             if (chooser.showOpenDialog(null) == JFileChooser.APPROVE_OPTION) {
                 System.out.println("getCurrentDirectory(): "
                         +  chooser.getCurrentDirectory());
-                recorderConfigWriter.setDirectoryToSaveRecordings(chooser.getCurrentDirectory().toPath());
+                recorder.setConfigurationValue(RecorderJsonKeyConstants.PATH_TO_SAVED_RECORDING, chooser.getCurrentDirectory().toPath().toString());
             }
             else {
                 System.out.println("No Selection, keeping default directory");
@@ -148,24 +146,29 @@ public class RecorderSystemTray {
         }
     }
 
-    @SubscribeEvent(event = {Event.RECORDING_STARTED, Event.RECORDING_STOPPED} )
-    public void onRecordingEvent(Payload payload) {
-        trayIcon.displayMessage("ScreenCapture™", payload.getMessage(), TrayIcon.MessageType.INFO);
+    public void onRecordingStoppedEvent(String filePath) {
+        System.out.println(filePath );
+        StringSelection stringSelection = new StringSelection(filePath);
+        Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
+        clipboard.setContents(stringSelection, null);
+
+        try {
+            Runtime.getRuntime().exec("explorer.exe /select," + filePath);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
-    @SubscribeEvent(event = {Event.RECORDING_STOPPED} )
-    public void onRecordingStoppedEvent(RecordingStoppedEventPayload payload) {
-        payload.getPathToRecordedFile().ifPresent(filePath -> {
-            System.out.println(filePath );
-            StringSelection stringSelection = new StringSelection(filePath);
-            Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
-            clipboard.setContents(stringSelection, null);
-
-            try {
-                Runtime.getRuntime().exec("explorer.exe /select," + filePath);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        });
+    @Override
+    public void onRecorderEvent(RecorderEventMessage recorderEventMessage) {
+        switch (recorderEventMessage.getRecorderEvent()){
+            case RECORDING_STARTED:
+                trayIcon.displayMessage("ScreenCapture™", RECORDING_STARTED, TrayIcon.MessageType.INFO);
+                break;
+            case RECORDING_STOPPED:
+                trayIcon.displayMessage("ScreenCapture™", RECORDING_STOPPED, TrayIcon.MessageType.INFO);
+                recorderEventMessage.getMessage().ifPresent(this::onRecordingStoppedEvent);
+                break;
+        }
     }
 }

@@ -4,12 +4,12 @@ import java.nio.file.Path;
 
 public interface RecorderConfigurationWriter {
 
-    public void setAutoRemovalOfOldRecording(boolean shouldRemove);
+    public void setAutoRemovalOfOldRecording(String shouldRemove);
 
-    public void setDirectoryToSaveRecordings(Path directoryPath);
+    public void setDirectoryToSaveRecordings(String directoryPath);
 
-    public void setFfmpegBinPath(Path ffmpegBinPath);
+    public void setFfmpegBinPath(String ffmpegBinPath);
 
-    public void setFps(int fps);
+    public void setFps(String fps);
 
 }

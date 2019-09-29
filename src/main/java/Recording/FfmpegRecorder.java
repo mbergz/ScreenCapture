@@ -1,34 +1,34 @@
 package Recording;
 
 import Config.RecorderSpecific.Reader.RecorderConfigurationReader;
+import Config.RecorderSpecific.RecorderJsonKeyConstants;
+import Config.RecorderSpecific.Writer.RecorderConfigurationWriter;
 import Eventhandlers.Event;
-import Eventhandlers.EventHandler;
-import Eventhandlers.Payload.RecordingStoppedEventPayload;
 import Eventhandlers.SubscribeEvent;
 import org.apache.commons.io.FileUtils;
 
 import java.io.*;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Scanner;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 public class FfmpegRecorder implements Recorder{
-    private static final  String RECORDING_STARTED = "Recording started";
-    private static final String RECORDING_STOPPED = "Recording stopped";
-
     // ------- Config variables -------
-    private RecorderConfigurationReader recorderConfiguration;
+    private RecorderConfigurationReader recorderConfigurationReader;
+    private RecorderConfigurationWriter recorderConfigurationWriter;
     private int framerate;
     private boolean shouldAutoRemoveOld;
     private Path ffmpegPath;
     private Path saveDirPath;
     // --------------------------------
 
-    private EventHandler eventHandler;
     private Path previousRecordingPath;
-    private String movieName = "screen_capture" + UUID.randomUUID() + ".mov";
-
+    private String movieName = "screen_capture" + UUID.randomUUID() + ".mp4";
+    private List<RecorderEventListener> recorderEventListeners = new ArrayList<>();
 
     private volatile boolean isRecording = false;
 
@@ -40,10 +40,11 @@ public class FfmpegRecorder implements Recorder{
     private OutputStream outStream;
     // --------------------------------
 
-    public FfmpegRecorder(RecorderConfigurationReader configuration) {
-        this.recorderConfiguration = configuration;
+    public FfmpegRecorder(RecorderConfigurationReader configuration,
+                          RecorderConfigurationWriter recorderConfigurationWriter) {
+        this.recorderConfigurationReader = configuration;
+        this.recorderConfigurationWriter = recorderConfigurationWriter;
         setUpDefaultConfiguration();
-        eventHandler = EventHandler.getInstance();
         setUpFfmpeg();
     }
 
@@ -52,37 +53,34 @@ public class FfmpegRecorder implements Recorder{
     }
 
     private void setUpDefaultConfiguration() {
-        ffmpegPath = recorderConfiguration.getFfmpegBinPath();
-        framerate = recorderConfiguration.getFps();
-        saveDirPath = recorderConfiguration.getDirPathToSavedRecordings();
-        shouldAutoRemoveOld = recorderConfiguration.isShouldAutoRemoveOld();
+        ffmpegPath = recorderConfigurationReader.getFfmpegBinPath();
+        framerate = recorderConfigurationReader.getFps();
+        saveDirPath = recorderConfigurationReader.getDirPathToSavedRecordings();
+        shouldAutoRemoveOld = recorderConfigurationReader.isShouldAutoRemoveOld();
     }
 
     // ------- CONFIG STUFF -------
-    @SubscribeEvent(event = {Event.RECORDING_NEW_CONFIGURATION_SAVE_DIR_CHANGED})
         public void dirToSaveRecordingsChanged() {
         System.out.println("received a setDirToSaveRecording event");
-        Path path = recorderConfiguration.getDirPathToSavedRecordings();
+        Path path = recorderConfigurationReader.getDirPathToSavedRecordings();
         File dir = path.toFile();
         if (dir.exists() && dir.isDirectory()) {
             pb.directory(dir);
             setUpFfmpeg();
         }
         else {
-            System.err.println("Could not sed new dir to save recordings in");
+            System.err.println("Could not set new dir to save recordings in");
         }
     }
 
-    @SubscribeEvent(event = {Event.RECORDING_NEW_CONFIGURATION_AUTO_REMOVE_CHANGED})
     public void autoRemoveChanged() {
         System.out.println("received a autoRemoveChanged event");
-        shouldAutoRemoveOld = recorderConfiguration.isShouldAutoRemoveOld();
+        shouldAutoRemoveOld = recorderConfigurationReader.isShouldAutoRemoveOld();
     }
 
-    @SubscribeEvent(event = {Event.RECORDING_NEW_CONFIGURATION_FFMPEG_BIN_PATH_CHANGED})
     public void newFfmpegBinPath() {
         System.out.println("received a newFfmprgbinPAth event");
-        Path path = recorderConfiguration.getFfmpegBinPath();
+        Path path = recorderConfigurationReader.getFfmpegBinPath();
         File dir = path.toFile();
         if (dir.exists() && dir.isFile()) {
             ffmpegPath = path;
@@ -93,10 +91,9 @@ public class FfmpegRecorder implements Recorder{
         }
     }
 
-    @SubscribeEvent(event = {Event.RECORDING_NEW_CONFIGURATION_FPS_CHANGED})
     public void fpsChanged() {
         System.out.println("received a fpsChanged event");
-        framerate = recorderConfiguration.getFps();
+        framerate = recorderConfigurationReader.getFps();
         setUpFfmpeg();
     }
     // ----------------------------
@@ -118,7 +115,8 @@ public class FfmpegRecorder implements Recorder{
 
     private void setUpFfmpeg() {
         shutDownIfActive();
-        pb = new ProcessBuilder(ffmpegPath.toString(), "-f", "gdigrab", "-framerate", Integer.toString(framerate) , "-i", "desktop", movieName);
+        pb = new ProcessBuilder(ffmpegPath.toString(), "-f", "gdigrab", "-framerate", Integer.toString(framerate)
+                ,"-video_size" ,"1280x720", "-i", "desktop", movieName);
         pb.directory(new File("."));
     }
 
@@ -140,16 +138,20 @@ public class FfmpegRecorder implements Recorder{
 
     public void startRecording() throws IOException {
         removePreviousRecordingIfExist();
-        eventHandler.dispatchEvent(Event.RECORDING_STARTED, () -> RECORDING_STARTED);
+        recorderEventListeners.forEach(listerner -> listerner.onRecorderEvent(
+                new RecorderEventMessage(RecorderEvent.RECORDING_STARTED))
+        );
         isRecording = true;
         p = pb.start();
         errStream = p.getErrorStream();
         inStream = p.getInputStream();
         outStream = p.getOutputStream();
         new Thread(() -> {
-            try {
-                while(errStream.read() != -1);
-            } catch (IOException e){}
+            Scanner sc = new Scanner(errStream);
+            while(sc.hasNextLine())
+            {
+                System.err.println(sc.nextLine());
+            }
         }).start();
         new Thread(() -> {
             try {
@@ -159,7 +161,6 @@ public class FfmpegRecorder implements Recorder{
     }
 
     public void stopRecording() throws IOException, InterruptedException {
-        // Set previousrecodingPath to equal this new recording
         previousRecordingPath = Paths.get(getPathToRecording());
 
         BufferedWriter bufferedWriter = new BufferedWriter(new OutputStreamWriter(outStream));
@@ -169,13 +170,16 @@ public class FfmpegRecorder implements Recorder{
         if (!p.waitFor(5, TimeUnit.SECONDS)){
             System.out.println("ffmpeg process did not exit properly after 5 seconds");
             p.destroy();
-            eventHandler.dispatchEvent(Event.RECORDING_STOPPED,
-                    () -> "Ffmpeg process aborted, could not finalize recording");
+
+            System.err.println("Ffmpeg process aborted, could not finalize recording");
+            recorderEventListeners.forEach(listerner -> listerner.onRecorderEvent(
+                    new RecorderEventMessage(RecorderEvent.RECORDING_STOPPED))
+            );
             removePreviousRecordingIfExist();
         } else {
-            eventHandler.dispatchEvent(Event.RECORDING_STOPPED, new RecordingStoppedEventPayload()
-                    .setMessage(RECORDING_STOPPED)
-                    .setPathToRecordedFile(getPathToRecording()));
+            recorderEventListeners.forEach(listerner -> listerner.onRecorderEvent(
+                    new RecorderEventMessage(RecorderEvent.RECORDING_STOPPED, getPathToRecording()))
+            );
             generateNewUuidMovieName();
         }
         isRecording = false;
@@ -192,5 +196,42 @@ public class FfmpegRecorder implements Recorder{
     @Override
     public boolean isRecording() {
         return isRecording;
+    }
+
+    @Override
+    public void addRecorderEventListner(RecorderEventListener recorderEventListener) {
+        recorderEventListeners.add(recorderEventListener);
+    }
+
+    // Keep this or seperate methods for each one?
+    @Override
+    public void setConfigurationValue(RecorderJsonKeyConstants key, String value) {
+        switch (key)
+        {
+            case FPS:
+                fpsChanged();
+                recorderConfigurationWriter.setFps(value);
+                break;
+            case MOVIE_NAME:
+                // TODO ?
+                break;
+            case FFMPEG_PATH_BIN:
+                newFfmpegBinPath();
+                recorderConfigurationWriter.setFfmpegBinPath(value);
+                break;
+            case PATH_TO_SAVED_RECORDING:
+                dirToSaveRecordingsChanged();
+                recorderConfigurationWriter.setDirectoryToSaveRecordings(value);
+                break;
+            case AUTO_REMOVE_OLD_RECORDING:
+                autoRemoveChanged();
+                recorderConfigurationWriter.setAutoRemovalOfOldRecording(value);
+                break;
+        }
+    }
+
+    @Override
+    public RecorderConfigurationReader getConfigurationReader() {
+        return recorderConfigurationReader;
     }
 }
