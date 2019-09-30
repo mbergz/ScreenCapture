@@ -10,6 +10,7 @@ import java.nio.charset.Charset;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Optional;
+import java.util.function.Function;
 
 public class ConfigurationFileReader {
     private static ConfigurationFileReader instance;
@@ -25,33 +26,25 @@ public class ConfigurationFileReader {
     private ConfigurationFileReader(){}
 
     public Optional<Integer> getPropertyAsInteger(String key) {
-        String element = getElementFromFile(key);
-        if (element != null) {
-            return Optional.of(Integer.parseInt(element));
-        }
-        return Optional.empty();
+        return getPropertyAs(key, Integer::parseInt);
     }
 
     public Optional<Path> getPropertyAsPath(String key) {
-        String element = getElementFromFile(key);
-        if (element != null) {
-            return Optional.of(Paths.get(element));
-        }
-        return Optional.empty();
+        return getPropertyAs(key, Paths::get);
     }
 
     public Optional<Boolean> getPropertyAsBoolean(String key) {
-        String element = getElementFromFile(key);
-        if (element != null) {
-            return Optional.of(Boolean.valueOf(element));
-        }
-        return Optional.empty();
+        return getPropertyAs(key, Boolean::valueOf);
     }
 
     public Optional<String> getPropertyAsString(String key) {
+        return getPropertyAs(key, Function.identity());
+    }
+
+    private <T> Optional<T> getPropertyAs(String key, Function<String, T> converterFunction) {
         String element = getElementFromFile(key);
         if (element != null && element.length() > 0) {
-            return Optional.of(element);
+            return Optional.of(converterFunction.apply(element));
         }
         return Optional.empty();
     }

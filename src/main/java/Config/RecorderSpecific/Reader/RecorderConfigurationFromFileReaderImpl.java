@@ -24,13 +24,19 @@ public class RecorderConfigurationFromFileReaderImpl implements RecorderConfigur
     @Override
     public Path getFfmpegBinPath() {
         var ffmpegConfigValue = configurationFileReader.getPropertyAsPath(RecorderJsonKeyConstants.FFMPEG_PATH_BIN.getJsonKey());
-        return ffmpegConfigValue.isPresent() ? ffmpegConfigValue.get() : RecorderValueDynamicConstans.getFfmpegBinPath();
+        return ffmpegConfigValue.orElseGet(RecorderValueDynamicConstans::getFfmpegBinPath);
     }
 
     @Override
     public int getFps() {
         var fpsConfigValue = configurationFileReader.getPropertyAsInteger(RecorderJsonKeyConstants.FPS.getJsonKey());
         return fpsConfigValue.orElseThrow(() -> new ConfigValueCouldNotBeFoundException(RecorderJsonKeyConstants.FPS.getJsonKey()));
+    }
+
+    @Override
+    public String getVideoSize() {
+        var videoSizeValue = configurationFileReader.getPropertyAsString(RecorderJsonKeyConstants.VIDEO_SIZE.getJsonKey());
+        return videoSizeValue.orElseThrow(() -> new ConfigValueCouldNotBeFoundException(RecorderJsonKeyConstants.VIDEO_SIZE.getJsonKey()));
     }
 
     private static class ConfigValueCouldNotBeFoundException extends RuntimeException {

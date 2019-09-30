@@ -5,7 +5,8 @@ public enum RecorderJsonKeyConstants {
     AUTO_REMOVE_OLD_RECORDING("autoRemoveOldRecording"),
     PATH_TO_SAVED_RECORDING("pathToSaved"),
     FPS("fps"),
-    MOVIE_NAME("movieName")
+    MOVIE_NAME("movieName"),
+    VIDEO_SIZE("videoSize")
     ;
 
     private String jsonKey;

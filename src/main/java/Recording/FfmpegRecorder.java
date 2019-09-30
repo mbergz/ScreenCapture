@@ -14,6 +14,8 @@ import java.util.Scanner;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
+import static Config.RecorderSpecific.RecorderJsonKeyConstants.*;
+
 public class FfmpegRecorder implements Recorder{
     // ------- Config variables -------
     private RecorderConfigurationReader recorderConfigurationReader;
@@ -22,6 +24,7 @@ public class FfmpegRecorder implements Recorder{
     private boolean shouldAutoRemoveOld;
     private Path ffmpegPath;
     private Path saveDirPath;
+    private String videoSize;
     // --------------------------------
 
     private Path previousRecordingPath;
@@ -55,6 +58,7 @@ public class FfmpegRecorder implements Recorder{
         framerate = recorderConfigurationReader.getFps();
         saveDirPath = recorderConfigurationReader.getDirPathToSavedRecordings();
         shouldAutoRemoveOld = recorderConfigurationReader.isShouldAutoRemoveOld();
+        videoSize = recorderConfigurationReader.getVideoSize();
     }
 
     // ------- CONFIG STUFF -------
@@ -114,7 +118,7 @@ public class FfmpegRecorder implements Recorder{
     private void setUpFfmpeg() {
         shutDownIfActive();
         pb = new ProcessBuilder(ffmpegPath.toString(), "-f", "gdigrab", "-framerate", Integer.toString(framerate)
-                ,"-video_size" ,"1280x720", "-i", "desktop", movieName);
+                ,"-video_size" ,videoSize, "-i", "desktop", movieName);
         pb.directory(new File("."));
     }
 
@@ -208,24 +212,21 @@ public class FfmpegRecorder implements Recorder{
         {
             case FPS:
                 fpsChanged();
-                recorderConfigurationWriter.setFps(value);
                 break;
             case MOVIE_NAME:
                 // TODO ?
                 break;
             case FFMPEG_PATH_BIN:
                 newFfmpegBinPath();
-                recorderConfigurationWriter.setFfmpegBinPath(value);
                 break;
             case PATH_TO_SAVED_RECORDING:
                 dirToSaveRecordingsChanged();
-                recorderConfigurationWriter.setDirectoryToSaveRecordings(value);
                 break;
             case AUTO_REMOVE_OLD_RECORDING:
                 autoRemoveChanged();
-                recorderConfigurationWriter.setAutoRemovalOfOldRecording(value);
                 break;
         }
+        recorderConfigurationWriter.setProperty(key, value);
     }
 
     @Override
