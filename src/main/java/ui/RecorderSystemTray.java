@@ -1,7 +1,8 @@
 package ui;
 
-import Config.RecorderSpecific.RecorderJsonKeyConstants;
-import Recording.Recorder;
+import Config.ConfigurationFileReader;
+import Config.RecorderSpecific.ffmpeg.FfmpegProcessArgument;
+import Recording.ProcessRecorder;
 import Recording.RecorderEventListener;
 import Recording.RecorderEventMessage;
 
@@ -20,16 +21,21 @@ public class RecorderSystemTray implements RecorderEventListener {
 
     private static final String START_RECORD = "Start record";
     private static final String STOP_RECORD = "Stop record";
-    private Recorder recorder;
+    private ProcessRecorder recorder;
+
+    // TODO use it
+    private ConfigurationFileReader configurationFileReader;
+
     private final TrayIcon trayIcon = new TrayIcon(createImage("images/videocam-filled-tool.png", "tray icon"));
 
-    public RecorderSystemTray(Recorder recorder){
+    public RecorderSystemTray(ProcessRecorder recorder, ConfigurationFileReader configurationFileReader){
         if (!SystemTray.isSupported()) {
             System.out.println("RecorderSystemTray is not supported");
             return;
         }
         this.recorder = recorder;
-        this.recorder.addRecorderEventListner(this);
+        this.configurationFileReader = configurationFileReader;
+        this.recorder.addRecorderEventListener(this);
         final PopupMenu popup = new PopupMenu();
         final SystemTray tray = SystemTray.getSystemTray();
 
@@ -77,7 +83,7 @@ public class RecorderSystemTray implements RecorderEventListener {
         items.forEach(item -> {
             item.addActionListener(a -> {
                 int fpsLabel = Integer.parseInt(((MenuItem)a.getSource()).getLabel());
-                recorder.setConfigurationValue(RecorderJsonKeyConstants.FPS, Integer.toString(fpsLabel));
+                recorder.setProcessConfigurationValue(FfmpegProcessArgument.FPS, Integer.toString(fpsLabel));
             });
             framreateItem.add(item);
         });
@@ -89,9 +95,9 @@ public class RecorderSystemTray implements RecorderEventListener {
         item.addItemListener(itemEvent -> {
             int itemState = itemEvent.getStateChange();
             if (itemState == ItemEvent.SELECTED){
-                recorder.setConfigurationValue(RecorderJsonKeyConstants.AUTO_REMOVE_OLD_RECORDING, Boolean.TRUE.toString());
+                recorder.toggleAutoRemoveOldRecording(true);
             } else {
-                recorder.setConfigurationValue(RecorderJsonKeyConstants.AUTO_REMOVE_OLD_RECORDING, Boolean.FALSE.toString());
+                recorder.toggleAutoRemoveOldRecording(false);
             }
         });
         return item;
@@ -108,7 +114,7 @@ public class RecorderSystemTray implements RecorderEventListener {
             if (chooser.showOpenDialog(null) == JFileChooser.APPROVE_OPTION) {
                 System.out.println("getCurrentDirectory(): "
                         +  chooser.getCurrentDirectory());
-                recorder.setConfigurationValue(RecorderJsonKeyConstants.PATH_TO_SAVED_RECORDING, chooser.getCurrentDirectory().toPath().toString());
+                recorder.setProcessConfigurationValue(FfmpegProcessArgument.PATH_TO_SAVED_RECORDING, chooser.getCurrentDirectory().toPath().toString());
             }
             else {
                 System.out.println("No Selection, keeping default directory");
@@ -146,7 +152,7 @@ public class RecorderSystemTray implements RecorderEventListener {
         }
     }
 
-    public void onRecordingStoppedEvent(String filePath) {
+    private void onRecordingStoppedEvent(String filePath) {
         System.out.println(filePath );
         StringSelection stringSelection = new StringSelection(filePath);
         Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();

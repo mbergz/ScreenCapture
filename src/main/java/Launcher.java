@@ -1,15 +1,18 @@
-import Config.RecorderSpecific.Reader.RecorderConfigurationFromFileReaderImpl;
-import Config.RecorderSpecific.Writer.RecorderConfigurationFromFileWriterImpl;
+import Config.ConfigurationFileReader;
+import Config.ConfigurationFileReaderJsonImpl;
+import Config.RecorderSpecific.ffmpeg.Writer.RecorderConfigurationFromFileWriterImpl;
 import Recording.FfmpegRecorder;
+import Recording.ProcessRecorder;
 import ui.RecorderSystemTray;
 
 public class Launcher {
 
     public static void main(String[] args) {
-        FfmpegRecorder recorder = new FfmpegRecorder(
-                new RecorderConfigurationFromFileReaderImpl(),
+        ConfigurationFileReader configurationFileReader = ConfigurationFileReaderJsonImpl.getInstance("config.json");
+        ProcessRecorder recorder = new FfmpegRecorder(
+                configurationFileReader,
                 new RecorderConfigurationFromFileWriterImpl());
-        new RecorderSystemTray(recorder);
+        new RecorderSystemTray(recorder, configurationFileReader);
     }
 
 }
