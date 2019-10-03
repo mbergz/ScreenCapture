@@ -19,10 +19,9 @@ class FFmpegRecorderProcessBuilderProvider {
     private ConfigurationFileReader recorderConfigurationReader;
     private RecorderConfigurationWriter recorderConfigurationWriter;
     private Map<FfmpegProcessArgument, Runnable> onNewConfigRunners = new HashMap<>();
+
     private Path ffmpegPath;
     private Path saveDirPath;
-
-    // TODO... ?
     private String movieName;
 
     private Map<String, String> processCmdArguments = new HashMap<>();
@@ -49,6 +48,13 @@ class FFmpegRecorderProcessBuilderProvider {
     }
 
     /**
+     * @return the current movie name
+     */
+    String getMovieName() {
+        return movieName;
+    }
+
+    /**
      * Sets a new configuration value to be used. Will write to json configuration file.
      *
      * @param key json key to use
@@ -60,7 +66,7 @@ class FFmpegRecorderProcessBuilderProvider {
         Runnable runner = onNewConfigRunners.get(key);
         if (runner == null)
         {
-            throw new RuntimeException("No runner set up for key:" + key);
+            throw new RuntimeException("No runner set up for key: " + key);
         }
         runner.run();
         return ffmpegPBSupplier.apply(movieName);
@@ -95,13 +101,14 @@ class FFmpegRecorderProcessBuilderProvider {
     }
 
     private void setUpOnNewConfigRunners() {
-        onNewConfigRunners.put(FPS, this::fpsChanged);
+        onNewConfigRunners.put(FPS, this::newFps);
         onNewConfigRunners.put(FFMPEG_PATH_BIN, this::newFfmpegBinPath);
-        onNewConfigRunners.put(PATH_TO_SAVED_RECORDING, this::dirToSaveRecordingsChanged);
+        onNewConfigRunners.put(PATH_TO_SAVED_RECORDING, this::newDirToSaveRecordings);
+        onNewConfigRunners.put(VIDEO_SIZE, this::newVideoSize);
     }
 
-    private void dirToSaveRecordingsChanged() {
-        System.out.println("received a setDirToSaveRecording event");
+    private void newDirToSaveRecordings() {
+        System.out.println("dirToSaveRecording changed");
         Path path = recorderConfigurationReader.getPropertyAsPath(FfmpegProcessArgument.PATH_TO_SAVED_RECORDING.key());
         File dir = path.toFile();
         if (dir.exists() && dir.isDirectory()) {
@@ -124,10 +131,18 @@ class FFmpegRecorderProcessBuilderProvider {
         }
     }
 
-    private void fpsChanged() {
+    private void newFps() {
         System.out.println("fps changed");
-        String newFPs = recorderConfigurationReader.getPropertyAsString(FfmpegProcessArgument.FPS.key());
-        processCmdArguments.put(FfmpegProcessArgument.FPS.key(), newFPs);
+        String fpsKey = FfmpegProcessArgument.FPS.key();
+        String newFPs = recorderConfigurationReader.getPropertyAsString(fpsKey);
+        processCmdArguments.put(fpsKey, newFPs);
+    }
+
+    private void newVideoSize() {
+        System.out.println("video size changed");
+        String videoSizeKey = FfmpegProcessArgument.VIDEO_SIZE.key();
+        String newVidSize = recorderConfigurationReader.getPropertyAsString(videoSizeKey);
+        processCmdArguments.put(videoSizeKey, newVidSize);
     }
 
 }

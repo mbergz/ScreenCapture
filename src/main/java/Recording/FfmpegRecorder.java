@@ -16,13 +16,17 @@ import java.util.concurrent.TimeUnit;
 
 import static Config.GeneralConfigProperty.AUTO_REMOVE_OLD_RECORDING;
 
+/**
+ *  Ffmpeg recorder.
+ *
+ */
 public class FfmpegRecorder implements ProcessRecorder {
 
-    private String movieName = "screen_capture" + UUID.randomUUID() + ".mp4";
     private ConfigurationFileReader recorderConfigurationReader;
     private RecorderConfigurationWriter recorderConfigurationWriter;
-    private boolean shouldAutoRemoveOld;
     private FFmpegRecorderProcessBuilderProvider myProcessBuilderProvider;
+
+    private boolean shouldAutoRemoveOld;
     private Path previousRecordingPath;
     private List<RecorderEventListener> recorderEventListeners = new ArrayList<>();
     private volatile boolean isRecording = false;
@@ -50,10 +54,10 @@ public class FfmpegRecorder implements ProcessRecorder {
     }
 
     private void generateNewUuidMovieName() {
-        movieName = "screen_capture" + UUID.randomUUID() + ".mov";
+        String newMovieName = "screen_capture" + UUID.randomUUID() + ".mov";
+        pb = myProcessBuilderProvider.getConfiguredFfmpegPBBuilder(newMovieName);
     }
-
-    private void shutDownIfActive() {
+    private synchronized void shutDownIfActive() {
         if (pb != null) {
             if (isRecording){
                 try {
@@ -70,7 +74,8 @@ public class FfmpegRecorder implements ProcessRecorder {
 
     private void setUpFfmpeg() {
         shutDownIfActive();
-        pb = myProcessBuilderProvider.getConfiguredFfmpegPBBuilder(movieName);
+        String startingMovieName = "screen_capture" + UUID.randomUUID() + ".mp4";
+        pb = myProcessBuilderProvider.getConfiguredFfmpegPBBuilder(startingMovieName);
     }
 
     public void recordForLimitedTime(int amount, TimeUnit unit) throws IOException, InterruptedException {
@@ -89,7 +94,10 @@ public class FfmpegRecorder implements ProcessRecorder {
         setUpFfmpeg();
     }
 
-    public void startRecording() throws IOException {
+    public synchronized void startRecording() throws IOException {
+        if (isRecording) {
+            throw new RuntimeException("Recorder is already running");
+        }
         removePreviousRecordingIfExist();
         recorderEventListeners.forEach(listener -> listener.onRecorderEvent(
                 new RecorderEventMessage(RecorderEvent.RECORDING_STARTED))
@@ -113,7 +121,7 @@ public class FfmpegRecorder implements ProcessRecorder {
         }).start();
     }
 
-    public void stopRecording() throws IOException, InterruptedException {
+    public synchronized void stopRecording() throws IOException, InterruptedException {
         previousRecordingPath = Paths.get(getPathToRecording());
 
         BufferedWriter bufferedWriter = new BufferedWriter(new OutputStreamWriter(outStream));
@@ -121,16 +129,16 @@ public class FfmpegRecorder implements ProcessRecorder {
         bufferedWriter.flush();
         bufferedWriter.close();
         if (!p.waitFor(5, TimeUnit.SECONDS)){
-            System.out.println("ffmpeg process did not exit properly after 5 seconds");
+            System.out.println("Ffmpeg process did not exit properly after 5 seconds");
             p.destroy();
 
             System.err.println("Ffmpeg process aborted, could not finalize recording");
-            recorderEventListeners.forEach(listerner -> listerner.onRecorderEvent(
+            recorderEventListeners.forEach(listener -> listener.onRecorderEvent(
                     new RecorderEventMessage(RecorderEvent.RECORDING_STOPPED))
             );
             removePreviousRecordingIfExist();
         } else {
-            recorderEventListeners.forEach(listerner -> listerner.onRecorderEvent(
+            recorderEventListeners.forEach(listener -> listener.onRecorderEvent(
                     new RecorderEventMessage(RecorderEvent.RECORDING_STOPPED, getPathToRecording()))
             );
             generateNewUuidMovieName();
@@ -139,11 +147,12 @@ public class FfmpegRecorder implements ProcessRecorder {
     }
 
     private String getPathToRecording() {
+        String currentMovieName = myProcessBuilderProvider.getMovieName();
         String pbDir = pb.directory().getPath();
         if (pbDir.equalsIgnoreCase(".")) {
-            return new File("").getAbsolutePath() + File.separator + movieName;
+            return new File("").getAbsolutePath() + File.separator + currentMovieName;
         }
-        return pbDir + File.separator + movieName;
+        return pbDir + File.separator + currentMovieName;
     }
 
     @Override

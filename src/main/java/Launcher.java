@@ -9,6 +9,8 @@ public class Launcher {
 
     public static void main(String[] args) {
         ConfigurationFileReader configurationFileReader = ConfigurationFileReaderJsonImpl.getInstance("config.json");
+        // verify config and default config exists
+
         ProcessRecorder recorder = new FfmpegRecorder(
                 configurationFileReader,
                 new RecorderConfigurationFromFileWriterImpl());
