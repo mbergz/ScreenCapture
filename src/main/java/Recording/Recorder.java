@@ -12,7 +12,6 @@ public interface Recorder {
 
     void stopRecording() throws IOException, InterruptedException;
 
-    // TODO use by tray
     boolean isRecording();
 
     void addRecorderEventListener(RecorderEventListener recorderEventListener);

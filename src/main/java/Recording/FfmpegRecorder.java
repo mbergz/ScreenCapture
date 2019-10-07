@@ -8,10 +8,10 @@ import org.apache.commons.io.FileUtils;
 import java.io.*;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 import java.util.UUID;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 
 import static Config.GeneralConfigProperty.AUTO_REMOVE_OLD_RECORDING;
@@ -28,7 +28,7 @@ public class FfmpegRecorder implements ProcessRecorder {
 
     private boolean shouldAutoRemoveOld;
     private Path previousRecordingPath;
-    private List<RecorderEventListener> recorderEventListeners = new ArrayList<>();
+    private List<RecorderEventListener> recorderEventListeners = new CopyOnWriteArrayList<>();
     private volatile boolean isRecording = false;
 
     // ------- Process stuff -------
@@ -99,9 +99,9 @@ public class FfmpegRecorder implements ProcessRecorder {
             throw new RuntimeException("Recorder is already running");
         }
         removePreviousRecordingIfExist();
-        recorderEventListeners.forEach(listener -> listener.onRecorderEvent(
-                new RecorderEventMessage(RecorderEvent.RECORDING_STARTED))
-        );
+        for (RecorderEventListener listener : recorderEventListeners) {
+            listener.onRecorderEvent(new RecorderEventMessage(RecorderEvent.RECORDING_STARTED));
+        }
         isRecording = true;
         p = pb.start();
         errStream = p.getErrorStream();
