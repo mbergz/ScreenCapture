@@ -1,7 +1,1 @@
-{
-  "pathToSaved": ".",
-  "autoRemoveOldRecording": "false",
-  "framerate": "60",
-  "video_size": "1920x1080",
-  "ffmpegPathBin": "c:\\Users\\Martin\\Documents\\ffmpeg\\ffmpeg-20190112-1ea5529-win64-static\\bin\\ffmpeg.exe"
-}
+{"pathToSaved":".","video_size":"1920x1080","autoRemoveOldRecording":"false","framerate":"60","ffmpegPathBin":"c:\\Users\\Martin\\Documents\\ffmpeg\\ffmpeg-20190112-1ea5529-win64-static\\bin\\ffmpeg.exe"}
